@@ -15,7 +15,7 @@ public:
 		this->col = col;
 		double* p = new double [(long)row*(long)col];
 		for (int i = 0; i < row*col; i++) {
-			p[i] = 5;
+			p[i] = 10;
 		}
 		this->p = p;
 	}
@@ -67,6 +67,15 @@ public:
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
 				this->p[i*(this->col) + j] = distribution(generator);
+			}
+		}
+	}
+	void set_zero()
+	{
+		
+		for (int i = 0; i < this->row; i++) {
+			for (int j = 0; j < this->col; j++) {
+				this->p[i * (this->col) + j] = 0;
 			}
 		}
 	}
