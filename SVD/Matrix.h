@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include<random>
 class Matrix
 {
 public:
@@ -25,7 +26,7 @@ public:
 		double* p = this->p;
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
-				std::cout<<p[i * row + j]<<" ";
+				std::cout<<p[i * col + j]<<" ";
 			}
 			printf("\n");
 		}
@@ -42,6 +43,32 @@ public:
 	}
 	void cuda_copy_to_host() {
 		cudaMemcpy(this->p, this->dp, sizeof(double)*(this->row) * this->col, cudaMemcpyDeviceToHost);
+	}
+	void transpose() {
+		int row = this->col;
+		int col = this->row;
+		double* p;
+		p = new double[row * col];
+		for (int i = 0; i < row; i++) {
+			for (int j = 0; j< col; j++) {
+				p[i * col + j] = this->p[j * this->col + i];
+			}
+		}
+		this->p = p;
+		this->row = row;
+		this->col = col;
+	
+	}
+	void random_init(double low, double high) 
+	{
+		std::random_device rand;
+		std::mt19937_64 generator(rand());
+		std::uniform_real_distribution<double> distribution(low, high);
+		for (int i = 0; i < this->row; i++) {
+			for (int j = 0; j < this->col; j++) {
+				this->p[i*(this->col) + j] = distribution(generator);
+			}
+		}
 	}
 };
 
