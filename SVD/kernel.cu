@@ -43,12 +43,21 @@ __global__ void Gram_schmidt(Matrix a, Matrix ans) {
 
 int main() {
     Matrix a(3,3);
+    a.p[0] = 1;
+    a.p[1] = 8;
+    a.p[2] = 4;
+    a.p[3]= 7;
+    a.p[4] = 3;
+    a.p[5]= 1;
+    a.p[6]= 5;
+    a.p[7]= 2;
+    a.p[8]= 9;
     a.cuda_malloc();
     Matrix ans(3,3);
     ans.set_zero();
     a.cuda_malloc();
     ans.cuda_malloc();
-   Gram_schmidt << <1, 1 >> > (a,ans);
+    Gram_schmidt << <1, 1 >> > (a,ans);
     ans.cuda_copy_to_host();
     ans.print();
     

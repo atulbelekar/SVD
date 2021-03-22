@@ -72,7 +72,6 @@ public:
 	}
 	void set_zero()
 	{
-		
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
 				this->p[i * (this->col) + j] = 0;
