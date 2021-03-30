@@ -15,7 +15,7 @@ public:
 		this->col = col;
 		double* p = new double [(long)row*(long)col];
 		for (int i = 0; i < row*col; i++) {
-			p[i] = 10;
+			p[i] = 0;
 		}
 		this->p = p;
 	}
