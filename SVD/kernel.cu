@@ -23,9 +23,11 @@ __global__ void matmul(Matrix a, Matrix b, Matrix c) {
 }
 
 __global__ void Gram_schmidt(Matrix a, Matrix ans) {
+    
     for (int i = 0; i < a.col; i++) {
         for (int j = i - 1; j >= 0; j--) {
             double dot = dot_prod(a, ans, i, j);
+
             for (int k = 0; k < a.row; k++) {
                 ans.dp[k*(ans.col)+i] += dot* (ans.dp[k*(ans.col)+j]);
             }
@@ -54,17 +56,10 @@ __global__ void R_matrix(Matrix a, Matrix Q, Matrix R) {
 int main() {
    
     Matrix A(2, 2);
-    A.p[0] = 7;
-    A.p[1] = 3;
-    A.p[2] = 3;
-    A.p[3] = -1;
-    Matrix B(2,2);    
+    A.random_init(0, 10);
     A.cuda_malloc();
-    Matrix res(2, 2);
-    B = A;
-    res.cuda_malloc();
     dim3 size(10, 10);
-    int n = 3;
+    int n = 20;
     Matrix Q(2, 2);
     Q.cuda_malloc();
     Matrix R(2, 2);
@@ -80,9 +75,13 @@ int main() {
         A.cuda_copy_to_host();
         A.print();
         cout << "****\n";
-        Gram_schmidt << <1, size >> > (B, Q);
-        R_matrix << <1, size >> > (B, Q, R);
-        matmul << <1, size >> > (R, Q, B);
+        Q.set_zero();
+        Q.cuda_free();
+        Q.set_zero();
+        Q.cuda_malloc();
+        Gram_schmidt << <1, size >> > (A, Q);
+        R_matrix << <1, size >> > (A, Q, R);
+        matmul << <1, size >> > (R, Q, A);
         
     }
     

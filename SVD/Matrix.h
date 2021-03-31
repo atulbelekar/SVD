@@ -26,7 +26,7 @@ public:
 		double* p = this->p;
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
-				std::cout<<p[i * col + j]<<" ";
+				printf("%.1f\t", p[i * col + j]);
 			}
 			printf("\n");
 		}
@@ -78,5 +78,6 @@ public:
 			}
 		}
 	}
+	
 };
 
