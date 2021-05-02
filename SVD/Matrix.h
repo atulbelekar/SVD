@@ -4,6 +4,10 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include<random>
+#include<fstream>
+#include<string>
+#include<sstream>
+using namespace std;
 class Matrix
 {
 public:
@@ -78,7 +82,36 @@ public:
 			}
 		}
 	}
-	
+	void make_identity() {
+		for (int i = 0; i < this->row; i++) {
+			for (int j = 0; j < this->col; j++) {
+				if (i == j) {
+					this->p[i * this->col + j] = 1;
+				}
+				else {
+					this->p[i * this->col + j] = 0;
+				}
+			}
+
+		}
+	}
+	void read_csv(string filename) {
+		int i{ 0 };
+		string line, word;
+		ifstream file(filename, ios::in);
+		//if (file.is_open()) { cout << "open" << endl; }
+
+		while (!file.eof()) {
+			getline(file, line);
+			stringstream s(line);
+			int j{ 0 };
+			while (getline(s, word, ',')) {
+				p[i * this->col + j] = stod(word);
+				j++;
+			}
+			i++;
+		}
+	}
 
 };
 

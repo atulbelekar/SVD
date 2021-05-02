@@ -81,7 +81,7 @@
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="device_functions.h" />
+    <ClInclude Include="helper_functions.h" />
     <ClInclude Include="Matrix.h" />
   </ItemGroup>
   <ItemGroup>

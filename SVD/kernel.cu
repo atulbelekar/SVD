@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include<iostream>
 #include "Matrix.h"
-#include "device_functions.h"
+#include "helper_functions.h"
 #include<random>
 using namespace std;
 
@@ -65,19 +65,39 @@ void Find_eigen_values(Matrix &A, Matrix &Q, int n) {
     }
 }
 
+Matrix InverseOfMatrix(Matrix A)
+{
+    Matrix I(A.row,A.col);
+    I.make_identity();
+
+    for (int i = 0; i < A.row-1; i++) {
+        for (int j = i + 1; j < A.row; j++) {
+            double temp=A.p[j*A.col+i]/A.p[i*A.col+i];
+            for (int k = 0; k < A.row; k++) {
+                A.p[j * A.row + k] = A.p[j * A.row + k] - A.p[i * A.row + k] * temp;
+                I.p[j * A.row + k] = I.p[j * A.row + k] - I.p[i * A.row + k] * temp;
+            }
+        }
+    }
+    for (int i = A.row - 1; i >0; i--) {
+        for (int j = i - 1; j >= 0; j--) {
+            double temp = A.p[j * A.col + i] / A.p[i * A.col + i];
+            for (int k = 0; k < A.row; k++) {
+                A.p[j * A.row + k] = A.p[j * A.row + k] - A.p[i * A.row + k] * temp;
+                I.p[j * A.row + k] = I.p[j * A.row + k] - I.p[i * A.row + k] * temp;
+            }
+        }
+    }
+    for (int i = 0; i < A.row; i++) {
+        for (int j = 0; j < A.row; j++) {
+            I.p[i * A.row + j] = I.p[i * A.row + j] / A.p[i * A.row + i];
+        }
+    }
+    return I;
+}
+
 int main() {
    
-    Matrix A(10, 10);
-    A.random_init(5, 50);
-    A.print();
-    cout << "*******\n";
-    A.cuda_malloc();
-    int n = 20;
-    Matrix Q(10, 10);
-    Q.cuda_malloc();
-    Find_eigen_values(A, Q, 100);
-    A.cuda_copy_to_host();
-    A.print();
-
+    
 }
 
