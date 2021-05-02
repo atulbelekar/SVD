@@ -78,7 +78,28 @@ public:
 			}
 		}
 	}
+
+	void read_csv(string filename) {
+		int i{ 0 };
+		string line, word;
+		ifstream file(filename, ios::in);
+		//if (file.is_open()) { cout << "open" << endl; }
+
+		while (!file.eof()) {
+			getline(file, line);
+			stringstream s(line);
+			int j{ 0 };
+			while (getline(s, word, ',')) {
+				this->p[i*this->col+j] = stod(word);
+				//cout << word << ' ';
+				j++;
+			}
+			//cout << endl;
+			i++;
+		}
+	}
 	
 
 };
+
 
