@@ -98,6 +98,21 @@ public:
 			i++;
 		}
 	}
+
+	void write_csv(string filename) {
+		std::fstream fout;
+		fout.open(filename, std::ios::out | std::ios::app);
+
+		for (int i = 0; i < this->row * this->col; i++) {
+			if (i % col != 0) {
+				fout << this->p[i] << ',';
+			}
+			else {
+				fout << '\n';
+				fout << this->p[i] << ',';
+			}
+		}
+	}
 	
 
 };
