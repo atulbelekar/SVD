@@ -17,7 +17,8 @@ __device__ double norm( Matrix mat, int col) {
 __device__ double dot_prod(Matrix a, Matrix e, int x, int y) {
     double ans = 0;
     for (int i = 0; i < a.row; i++) {
-        ans += (a.dp[i*a.col+x] * e.dp[i*e.col+y]);
+        ans =ans+ (a.dp[(i*a.col)+x] * e.dp[(i*e.col)+y]);
     }
     return ans;
+
 }

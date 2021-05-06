@@ -8,6 +8,8 @@
 #include<string>
 #include<sstream>
 using namespace std;
+
+
 class Matrix
 {
 public:
@@ -30,10 +32,11 @@ public:
 		double* p = this->p;
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
-				printf("%.1f\t", p[i * col + j]);
+				printf("%.2f\t", p[i * col + j]);
 			}
 			printf("\n");
 		}
+		printf("\n");
 	}
 	void cuda_malloc() {
 		
@@ -58,6 +61,7 @@ public:
 				p[i * col + j] = this->p[j * this->col + i];
 			}
 		}
+		delete(this->p);
 		this->p = p;
 		this->row = row;
 		this->col = col;
@@ -99,8 +103,6 @@ public:
 		int i{ 0 };
 		string line, word;
 		ifstream file(filename, ios::in);
-		//if (file.is_open()) { cout << "open" << endl; }
-
 		while (!file.eof()) {
 			getline(file, line);
 			stringstream s(line);
@@ -112,6 +114,19 @@ public:
 			i++;
 		}
 	}
+	void write_csv(string filename) {
+		std::fstream fout;
+		fout.open(filename, std::ios::out | std::ios::app);
 
+		for (int i = 0; i < this->row * this->col; i++) {
+			if (i % col != 0) {
+				fout << this->p[i] << ',';
+			}
+			else {
+				fout << this->p[i] << ',';
+				fout << '\n';
+			}
+		}
+	}
 };
 
