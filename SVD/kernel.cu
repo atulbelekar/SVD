@@ -7,6 +7,7 @@
 #include "helper_functions.h"
 #include<random>
 using namespace std;
+
 __global__ void matmul(Matrix a, Matrix b, Matrix c) {
 
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < a.row; i += (blockDim.x * gridDim.x)) {
@@ -28,35 +29,62 @@ __global__ void set_zero(Matrix c) {
         }
     }
 }
+
 __global__ void Gram_schmidt(Matrix a, Matrix ans) 
 {
-    for (int j = 0; j < a.col;j++) 
-    {
-        for (int l = 0; l < a.row; l++) 
-        {
-            ans.dp[l * ans.col + j] = a.dp[l * ans.col + j];
-        }
-        for (int k = 0; k < j; k++)
-        {
-            double dot = dot_prod(ans, a, k, j);
-            double norm_ = dot_prod(ans,ans, k,k);
-            for (int l = 0; l < ans.row; l++)
-            {
-                ans.dp[l * ans.col + j] = ans.dp[l * ans.col + j] - (dot / norm_) * ans.dp[l * ans.col + k];
+    for (int i = 0; i < a.row; i++) {
+        for (int j = i - 1; j >= 0; j--) {
+            double dot = dot_prod(a, ans, i, j);
+            for (int k = 0; k < a.row; k++) {
+                ans.dp[k * (ans.col) + i] += dot * (ans.dp[k * (ans.col) + j]);
             }
         }
-
-    }
-    for (int j = 0; j < a.col; j++) 
-    {
-        double norm_ = norm(ans, j);
-        for (int k=0;k<a.row;k++)
-        {
-            ans.dp[k * ans.col + j] = ans.dp[k * ans.col + j] / norm_;
+        for (int k = 0; k < a.row; k++) {
+            ans.dp[k * (ans.col) + i] = (ans.dp[k * (ans.col) + i] - a.dp[k * (ans.col) + i]);
         }
-        
+        double norm_temp = norm(ans, i);
+        for (int k = 0; k < a.row; k++) {
+            ans.dp[k * (ans.col) + i] = ans.dp[k * (ans.col) + i] / norm_temp;
+        }
     }
       
+}
+void gram_schmidt_host(Matrix &a, Matrix &ans) {
+    
+    for (int i = 0; i < a.row; i++) {
+        for (int j = i - 1; j >= 0; j--) {
+            double dot = dot_prod_host(a, ans, i, j);
+            for (int k = 0; k < a.row; k++) {
+                ans.p[k * (ans.col) + i] += dot * (ans.p[k * (ans.col) + j]);
+            }
+        }
+        for (int k = 0; k < a.row; k++) {
+            ans.p[k * (ans.col) + i] = (ans.p[k * (ans.col) + i] - a.p[k * (ans.col) + i]);
+        }
+        double norm_temp = norm_host(ans, i);
+        for (int k = 0; k < a.row; k++) {
+            ans.p[k * (ans.col) + i] = ans.p[k * (ans.col) + i] / norm_temp;
+        }
+    }
+
+    /*Matrix v(a.row, a.col);
+    for (int j = 0; j<a.col; j++) {
+        for (int i = 0; i < a.row; i++) {
+            v.p[i * a.col + j] = a.p[i * a.col + j];
+        }
+    }
+    for (int j = 0; j<a.col; j++) {
+        double norm_temp = norm_host(v, j);
+        for (int i = 0; i < a.row; i++) {
+            q.p[i * a.col + j] = v.p[i * a.col + j]/norm_temp;
+        }
+        for (int k = j + 1; k < a.col; k++) {
+            double dot = dot_prod_host(q, v, j, k);
+            for (int i = 0; i < a.row; i++) {
+                v.p[i * a.col + k] = v.p[i * a.col + k]- q.p[i * a.col + j]*dot;
+            }
+        }
+    }*/
 }
 
 __global__ void R_matrix(Matrix a, Matrix Q, Matrix R) {
@@ -68,41 +96,74 @@ __global__ void R_matrix(Matrix a, Matrix Q, Matrix R) {
     }
 }
 
-__global__ void sqrt_d(Matrix a) {
-    for (int i = 0; i < a.row; i++)
-    {
-        a.dp[i * a.col + i] = sqrt(a.dp[i * a.col + i]);
+__global__ void copy(Matrix a, Matrix b)
+{
+    for (int i = 0; i < a.row; i++) {
+        for (int j = 0; j < a.row; j++) {
+            b.dp[i * a.col + j] = a.dp[i * a.col + j];
+        }
     }
 }
 
+void sqrt_d(Matrix &a) {
+    for (int i = 0; i < a.row; i++)
+    {
+        for (int j = 0; j < a.col; j++) {
+            if (i == j) {
+                a.p[i * a.col + i] = sqrt(abs(a.p[i * a.col + i]));
+            }
+            else {
+                a.p[i * a.col + j] = 0;
+            }
+        }
+        
+    }
+}
+void Inversehost(Matrix& s) {
+    for (int i = 0; i < s.row; i++) {
+        for (int j = 0; j < s.col; j++) {
+            if (i == j) {
+                if (s.p[i * s.col + j] != 0) {
+                    s.p[i * s.col + j] = 1 / s.p[i * s.col + j];
+                }
+            }
+        }
+    }
+}
 void Find_eigen_values(Matrix &A,Matrix &Eig, int n) {
+    
+    dim3 size(32, 32);
     Matrix Q(A.row, A.col);
     Q.cuda_malloc();
     Matrix R(A.row, A.col);
     R.cuda_malloc();
-    dim3 size(31, 31);
-    Gram_schmidt << <1, 1 >> > (A, Q);
-    Q.cuda_copy_to_host();
-   
-    R_matrix << <1, size >> > (A, Q, R);
-    R.cuda_copy_to_host();
-    
-    Matrix temp(Eig.row,Eig.col);
+    Matrix temp(A.row, A.col);
+    temp.make_identity();
     temp.cuda_malloc();
-    matmul << <1, size >> > (Q, Eig, temp);
-    Eig = temp;
-    while (n--) {
-        matmul << <1, size >> > (R, Q, A);
-        set_zero << <1, size >> > (Q);
-        Gram_schmidt << <1, 1 >> > (A, Q);
+
+    int Qrows = ceil(Q.row / 32) + 1;
+    int Qcols = ceil(Q.col / 32) + 1;
+    dim3 Qsize(Qrows, Qcols);
+
+    dim3 tempSize((ceil(temp.row / 32) + 1), (ceil(temp.col / 32) + 1));
+
+    while (n--)
+    {
         
-        R_matrix << <1, size >> > (A, Q, R);
-        R.cuda_copy_to_host();
+        dim3 blockSize(Qrows, Qcols);
+
+        set_zero << <blockSize, size >> > (Q);
+        Q.cuda_copy_to_host();
+        gram_schmidt_host(A, Q);
+        Q.cuda_free();
+        Q.cuda_malloc();
+        matmul << <tempSize, size >> > (Eig, Q, temp);
+        copy << <tempSize, size >> > (temp, Eig);
+        R_matrix << <Qsize, size >> > (A, Q, R);
+        matmul << <Qsize, size >> > (R, Q, A);
+        A.cuda_copy_to_host();
         
-        matmul << <1, size >> > (Eig, Q, temp);
-        Eig = temp;          
     }
-    
 }
 
 Matrix InverseOfMatrix(Matrix A)
@@ -147,69 +208,213 @@ __global__ void transpose(Matrix a, Matrix b) {
     }   
 }
 
-void SVD(Matrix& A) {
-    A.print();
-    cout << endl;
-    dim3 size(31, 31);
+void left_singular_value(Matrix& A,string str)
+{
+    dim3 size(32, 32);
+    dim3 ASize((ceil(A.row / 32) + 1), (ceil(A.col / 32) + 1));
+
     Matrix At(A.col, A.row);
     At.cuda_malloc();
-    transpose << <1, size >> > (A, At);
+    transpose << <ASize, size >> > (A, At);
+    
     Matrix AAt(A.row, At.col);
+
+    dim3 AAtSize((ceil(A.row / 32) + 1), (ceil(A.row / 32) + 1));
     AAt.cuda_malloc();
-    matmul << <1, size >> > (A, At, AAt);
+    matmul << <AAtSize, size >> > (A, At, AAt);
     AAt.cuda_copy_to_host();
     
+    Matrix Eigvec(AAt.row, AAt.col);
+    Eigvec.make_identity();
+    Eigvec.cuda_malloc();
+    Find_eigen_values(AAt, Eigvec, 30);
+    if (str == "True") {
+        AAt.cuda_copy_to_host();
+        sqrt_d(AAt);
+        
+       AAt.write_csv("S");
+    }
+    Eigvec.cuda_copy_to_host();
+    Eigvec.write_csv("U");
+    Eigvec.cuda_free();
+    At.cuda_free();
+    AAt.cuda_free();
+}
+
+void right_singular_value(Matrix& A,string str)
+{
+    dim3 size(32, 32);
+    dim3 ASize((ceil(A.row / 32) + 1), (ceil(A.col / 32) + 1));
+    dim3 AtASize((ceil(A.col / 32) + 1), (ceil(A.col / 32) + 1));
+
+    Matrix At(A.col, A.row);
+    At.cuda_malloc();
+    transpose << <ASize, size >> > (A, At);
     Matrix AtA(At.row, A.col);
     AtA.cuda_malloc();
-    matmul << <1, size >> > (At, A, AtA);
+    matmul << <AtASize, size >> > (At, A, AtA);
     AtA.cuda_copy_to_host();
-    
-    Matrix U(AAt.row, AAt.col);
-    U.make_identity();
-    U.cuda_malloc();
-    Find_eigen_values(AAt, U, 1000);
-    U.cuda_copy_to_host();
-    U.print();
-    cout << endl;
-    sqrt_d << <1, 1 >> > (AAt);
-    AAt.cuda_copy_to_host();
-    AAt.print();
-    cout << endl;
-    Matrix V(AtA.row, AtA.col);
-    V.make_identity();
-    V.cuda_malloc();
-    Find_eigen_values(AtA, V,1000);
-    V.cuda_copy_to_host();
-    V.print();
+    Matrix Eigvec(AtA.row, AtA.col);
+    Eigvec.make_identity();
+    Eigvec.cuda_malloc();
+    Find_eigen_values(AtA, Eigvec, 30);
+    if (str == "True") {
+        AtA.cuda_copy_to_host();
+        sqrt_d(AtA);
+ 
+        AtA.write_csv("S");
+    }
+    Eigvec.cuda_copy_to_host();
+    At.cuda_free();
+    Eigvec.write_csv("V");
+    Eigvec.cuda_free();
+    AtA.cuda_free();
 }
+
+void SVD(Matrix& A) {
+    if (A.row <= A.col) {
+        left_singular_value(A,"True");
+        right_singular_value(A,"False");
+    }
+    else
+    {
+        left_singular_value(A, "False");
+        right_singular_value(A, "True");
+    }
+   
+}
+
+
+__global__ void nodiag_normalize(double* A, double* I, int n, int i) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x < n && y < n)
+        if (x == i && x != y) {
+            I[x * n + y] /= A[i * n + i];
+            A[x * n + y] /= A[i * n + i];
+        }
+
+}
+
+__global__ void diag_normalize(double* A, double* I, int n, int i) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x < n && y < n)
+        if (x == y && x == i) {
+            I[x * n + y] /= A[i * n + i];
+            A[x * n + y] /= A[i * n + i];
+        }
+
+}
+
+__global__ void gaussjordan(double* A, double* I, int n, int i)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x < n && y < n) {
+        if (x != i) {
+            I[x * n + y] -= I[i * n + y] * A[x * n + i];
+            if (y != i) {
+                A[x * n + y] -= A[i * n + y] * A[x * n + i];
+            }
+        }
+    }
+
+}
+__global__ void set_zero_(double* A, double* I, int n, int i) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x < n && y < n) {
+        if (x != i) {
+            if (y == i) {
+                A[x * n + y] = 0;
+            }
+        }
+    }
+}
+
+void InverseGPU(Matrix& A) {
+    Matrix I(A.row, A.col);
+    I.make_identity();
+    I.cuda_malloc();
+    int blocksize = 16;
+    dim3 threadsPerBlock(blocksize, blocksize);
+
+    dim3 numBlocks((A.row + blocksize - 1) / blocksize, (A.row + blocksize - 1) / blocksize);
+
+    for (int i = 0; i < A.row; i++) {
+        nodiag_normalize << <numBlocks, threadsPerBlock >> > (A.dp, I.dp, A.row, i);
+        diag_normalize << <numBlocks, threadsPerBlock >> > (A.dp, I.dp, A.row, i);
+        gaussjordan << <numBlocks, threadsPerBlock >> > (A.dp, I.dp, A.row, i);
+        set_zero_ << <numBlocks, threadsPerBlock >> > (A.dp, I.dp, A.row, i);
+    }
+    I.cuda_copy_to_host();
+}
+
+void matmul_3(Matrix &Y, Matrix &V, Matrix &Si, Matrix &ans) {
+    Matrix ans2(Y.row, V.col);
+    dim3 size(32, 32);
+    ans2.cuda_malloc();
+    matmul<<< 1, size >>> (Y, V ,ans2);
+    matmul<<< 1, size >>> (ans2, Si, ans);
+    ans.cuda_copy_to_host();
+    ans2.cuda_free();
+    
+
+}
+
+void DMD(Matrix X, Matrix Y) {
+    dim3 size(32, 32);
+    
+    X.cuda_malloc();
+    Y.cuda_malloc();
+    SVD(X);
+    Matrix U(X.row, X.row);
+    U.read_csv("U");
+    Matrix S(X.row,X.col);
+    S.read_csv("S");
+    Matrix V(X.col, X.col);
+    V.read_csv("V");
+    Inversehost(S);
+    Matrix Si(S.col, S.row);
+    Si.cuda_malloc();
+    S.cuda_malloc();
+    transpose << <1, size >> > (S, Si);
+    Si.cuda_copy_to_host();
+    S.cuda_free();
+    U.cuda_malloc();
+    Matrix Ut(U.col, U.row);
+    Ut.cuda_malloc();
+    transpose << <1, size >> > (U, Ut);
+    Ut.cuda_copy_to_host();
+    
+    Matrix ans(U.col, U.row);
+    ans.cuda_malloc();
+    V.cuda_malloc();
+    matmul_3(Y, V, Si, ans);
+
+    Matrix ansf(U.col, U.row);
+    ansf.cuda_malloc();
+    //dim3 size(32, 32);
+    matmul<<< 1, size >>> (Ut,ans,ansf);
+    ansf.cuda_copy_to_host();
+    ansf.write_csv("Atilde");
+    ansf.cuda_free();
+    //////////////////
+
+   
+}
+
 int main() {
    
-   /* Matrix A(3, 2);
-    A.p[0] = 1;
-    A.p[1] = 2;
-    A.p[2] = 8;
-    A.p[3] = 2;
-    A.p[4] = 1;
-    A.p[5] = 5;
-    A.cuda_malloc();
-    SVD(A);*/
-
-    Matrix A(10, 5);
-    //A.p[0] = 1;  // 5;
-    //A.p[1] = 2;
-    //A.p[2] = 3;
-    //A.p[3] = 10;
-    //A.p[4] = 2;
-    //A.p[5] = 4;
-    //A.p[6] = 8;
-    //A.p[7] = 7;
-    //A.p[8] = 3;
-    //A.p[9] = 8;
-    //A.p[10] = 5;
-    //A.p[11] = 6;
-    A.random_init(1, 10);
-    A.cuda_malloc();
-    SVD(A); 
-   
+    Matrix a(1000, 20);
+    a.random_init(-1,1);
+    Matrix b(1000, 20);
+    b.random_init(-0.01, 0.01);
+    DMD(a,b);     
 }
 

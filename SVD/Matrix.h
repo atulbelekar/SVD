@@ -70,7 +70,7 @@ public:
 	void random_init(double low, double high) 
 	{
 		std::random_device rand;
-		std::mt19937_64 generator(rand());
+		std::mt19937_64 generator(1);
 		std::uniform_real_distribution<double> distribution(low, high);
 		for (int i = 0; i < this->row; i++) {
 			for (int j = 0; j < this->col; j++) {
@@ -118,15 +118,27 @@ public:
 		std::fstream fout;
 		fout.open(filename, std::ios::out | std::ios::app);
 
-		for (int i = 0; i < this->row * this->col; i++) {
-			if (i % col != 0) {
-				fout << this->p[i] << ',';
+		for (int i = 0; i < this->row ; i++) {
+			for (int j = 0; j < this->col; j++) {
+
+				fout << this->p[i * this->col + j];
+				if (j == (this->col) - 1) { continue; }
+				fout << ",";
 			}
-			else {
-				fout << this->p[i] << ',';
-				fout << '\n';
+			fout << "\n";
+		}
+	}
+	void resize(int a, int b) {
+		double* s = new double[a * b];
+		for (int i = 0; i < a; i++) {
+			for (int j = 0; j < b; j++) {
+				s[i * b + j] = this->p[i*this->col+j];
 			}
 		}
+		this->row = a;
+		this->col = b;
+		delete(this->p);
+		this->p = s;
 	}
 };
 
