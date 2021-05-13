@@ -7,17 +7,17 @@
 #include<math.h>
 #include"Matrix.h"
 
-__device__ double norm( Matrix mat, int col) {
+__device__ double norm( double* mat, int col,int matrow, int matcol) {
     double ans = 0;
-    for (int i = 0; i < mat.row; i++) {
-        ans += (mat.dp[i*mat.col+col] * mat.dp[i*mat.col+col]); 
+    for (int i = 0; i < matrow; i++) {
+        ans += (mat[i*matcol+col] * mat[i*matcol+col]); 
     }
     return sqrt(ans);
 }
-__device__ double dot_prod(Matrix a, Matrix e, int x, int y) {
+__device__ double dot_prod(double* a, double* e, int x, int y,int arow, int acol, int ecol) {
     double ans = 0;
-    for (int i = 0; i < a.row; i++) {
-        ans =ans+ (a.dp[(i*a.col)+x] * e.dp[(i*e.col)+y]);
+    for (int i = 0; i < arow; i++) {
+        ans =ans+ (a[(i*acol)+x] * e[(i*ecol)+y]);
     }
     return ans;
 

@@ -1,0 +1,12 @@
+10: 1575 ms
+100: 1169 ms
+500: 4479 ms
+750: 23.261 s
+1000: 116071 milliseconds
+1500: 518473 milliseconds
+
+serial :
+
+10 : 11 ms
+100: 1072 milliseconds
+500 : 

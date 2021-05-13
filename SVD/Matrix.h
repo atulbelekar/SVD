@@ -39,11 +39,8 @@ public:
 		printf("\n");
 	}
 	void cuda_malloc() {
-		
-		int status;
 		cudaMalloc((void**)&(this->dp), sizeof(double) * row*col);
 		cudaMemcpy(this->dp, this->p, sizeof(double)* col*row, cudaMemcpyHostToDevice);
-		
 	}
 	void cuda_free() {
 		cudaFree(this->dp);
