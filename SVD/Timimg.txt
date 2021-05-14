@@ -9,4 +9,5 @@ serial :
 
 10 : 11 ms
 100: 1072 milliseconds
-500 : 
+500 : 117456 milliseconds
+1000: 5985464 milliseconds
